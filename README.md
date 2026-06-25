@@ -12,7 +12,7 @@ A simple, local, browser-based tool for adding your own detection notes across t
 - View cross-domain ID badges when a technique appears in multiple matrices
 - Resume exactly where you left off — the active domain and last-selected technique are remembered across reloads
 
-![Demo](images/Demo-MITRE-Notes.gif)
+![Demo](demo/Demo-MITRE-Notes.gif)
 
 ## Adding notes
 
