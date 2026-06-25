@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+<meta name="referrer" content="no-referrer">
 <title>MITRE ATT&CK PKB</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -844,7 +846,7 @@ function makeTree(data) {
     header.className = 'tactic-header';
     header.innerHTML = `
       <span class="chevron">▶</span>
-      <span class="tactic-name">${tactic.tactic}</span>
+      <span class="tactic-name">${escapeHTML(tactic.tactic)}</span>
       <span class="tactic-count">${tactic.techniques.length}</span>
     `;
     section.appendChild(header);
@@ -861,9 +863,9 @@ function makeTree(data) {
       row.innerHTML = `
         <span class="sub-toggle ${hasSubs ? '' : 'hidden'}">▶</span>
         <div class="technique-info">
-          <div class="technique-id">${tech.id}</div>
-          <div class="technique-name">${tech.name}</div>
-          ${(tech.platforms||[]).length ? `<div class="nav-pf-chips">${tech.platforms.map(p => `<span class="nav-pf-chip">${pfAbbr(p)}</span>`).join('')}</div>` : ''}
+          <div class="technique-id">${escapeHTML(tech.id)}</div>
+          <div class="technique-name">${escapeHTML(tech.name)}</div>
+          ${(tech.platforms||[]).length ? `<div class="nav-pf-chips">${tech.platforms.map(p => `<span class="nav-pf-chip">${escapeHTML(pfAbbr(p))}</span>`).join('')}</div>` : ''}
         </div>
       `;
 
@@ -893,9 +895,9 @@ function makeTree(data) {
           subRow.dataset.id = sub.id;
           subRow.innerHTML = `
             <div class="technique-info">
-              <div class="technique-id">${sub.id}</div>
-              <div class="technique-name">${sub.name}</div>
-              ${(sub.platforms||[]).length ? `<div class="nav-pf-chips">${sub.platforms.map(p => `<span class="nav-pf-chip">${pfAbbr(p)}</span>`).join('')}</div>` : ''}
+              <div class="technique-id">${escapeHTML(sub.id)}</div>
+              <div class="technique-name">${escapeHTML(sub.name)}</div>
+              ${(sub.platforms||[]).length ? `<div class="nav-pf-chips">${sub.platforms.map(p => `<span class="nav-pf-chip">${escapeHTML(pfAbbr(p))}</span>`).join('')}</div>` : ''}
             </div>
           `;
           subRow.addEventListener('click', () => {
@@ -998,7 +1000,7 @@ function rebuildTree() {
 
   // Try to restore saved selection in the rebuilt tree
   const savedId = localStorage.getItem('attck-selected');
-  if (savedId) {
+  if (savedId && /^T\d{4}(\.\d{3})?$/.test(savedId)) {
     for (const tactic of filtered) {
       for (const tech of tactic.techniques) {
         if (tech.id === savedId) {
@@ -1164,7 +1166,7 @@ document.querySelectorAll('.domain-btn').forEach(btn => {
 // Restore the last-viewed technique after a reload, otherwise open the first tactic
 (function restoreSelection() {
   const savedId = localStorage.getItem('attck-selected');
-  if (!savedId) { return; }
+  if (!savedId || !/^T\d{4}(\.\d{3})?$/.test(savedId)) { return; }
 
   for (const tactic of getActiveData()) {
     for (const tech of tactic.techniques) {
@@ -1216,17 +1218,17 @@ function selectItem(item, parentTech, tacticName) {
   content.classList.add('visible');
 
   const tactic = tacticName || getActiveData().find(t => t.techniques.find(te => te.id === item.id))?.tactic || '';
-  const parentLabel = parentTech ? `${parentTech.id} · ${parentTech.name} → ` : '';
+  const parentLabel = parentTech ? `${escapeHTML(parentTech.id)} · ${escapeHTML(parentTech.name)} → ` : '';
 
   // Build cross-domain ID badges for the detail header
   function buildCrossIds(tech) {
     const parts = [];
     if (activeDomain === 'enterprise') {
       const cd = CROSS_DOMAIN[tech.id];
-      if (cd?.mobileId) parts.push(`<span class="cd-badge cd-mobile">Mobile: ${cd.mobileId}</span>`);
-      if (cd?.icsId)    parts.push(`<span class="cd-badge cd-ics">ICS: ${cd.icsId}</span>`);
+      if (cd?.mobileId) parts.push(`<span class="cd-badge cd-mobile">Mobile: ${escapeHTML(cd.mobileId)}</span>`);
+      if (cd?.icsId)    parts.push(`<span class="cd-badge cd-ics">ICS: ${escapeHTML(cd.icsId)}</span>`);
     } else if (tech.canonicalId) {
-      parts.push(`<span class="cd-badge cd-enterprise">Enterprise: ${tech.canonicalId}</span>`);
+      parts.push(`<span class="cd-badge cd-enterprise">Enterprise: ${escapeHTML(tech.canonicalId)}</span>`);
     }
     return parts.length ? `<div class="cross-domain-ids">${parts.join('')}</div>` : '';
   }
@@ -1238,33 +1240,33 @@ function selectItem(item, parentTech, tacticName) {
         const sNotes = getDetectionNotes(s);
         const sCrossIds = buildCrossIds(s);
         return `
-          <div class="sub-acc-card" id="sub-acc-${s.id}">
+          <div class="sub-acc-card" id="sub-acc-${escapeHTML(s.id)}">
             <div class="sub-acc-header" onclick="toggleSubAcc(this)">
               <span class="sub-acc-chev">▶</span>
-              <span class="sub-acc-id">${s.id}</span>
-              <span class="sub-acc-name">${s.name}</span>
-              ${(s.platforms||[]).length ? `<span class="sub-acc-platforms">${s.platforms.map(p => `<span class="sub-pf-chip">${pfAbbr(p)}</span>`).join('')}</span>` : ''}
+              <span class="sub-acc-id">${escapeHTML(s.id)}</span>
+              <span class="sub-acc-name">${escapeHTML(s.name)}</span>
+              ${(s.platforms||[]).length ? `<span class="sub-acc-platforms">${s.platforms.map(p => `<span class="sub-pf-chip">${escapeHTML(pfAbbr(p))}</span>`).join('')}</span>` : ''}
             </div>
             <div class="sub-acc-body">
               ${sCrossIds ? `<div class="sub-acc-section"><div class="cross-domain-ids" style="margin-bottom:0.5rem">${sCrossIds}</div></div>` : ''}
               ${s.description ? `
                 <div class="sub-acc-section">
                   <div class="sub-acc-label">Description</div>
-                  <p class="description">${s.description}</p>
+                  <p class="description">${sanitizeHTML(s.description)}</p>
                 </div>` : ''}
               <div class="sub-acc-section">
                 <div class="sub-acc-label">Detection Strategies</div>
-                <div class="detection-box">${s.detection || '<em>No detection notes yet.</em>'}</div>
+                <div class="detection-box">${s.detection ? sanitizeHTML(s.detection) : '<em>No detection notes yet.</em>'}</div>
               </div>
               ${sNotes ? `
                 <div class="sub-acc-section">
                   <div class="sub-acc-label">Notes</div>
-                  <div class="notes-box" id="sub-notes-${s.id}"></div>
+                  <div class="notes-box" id="sub-notes-${escapeHTML(s.id)}"></div>
                 </div>` : ''}
               <div class="sub-acc-section">
                 <div class="sub-acc-label">Data Sources</div>
                 <div class="chips">
-                  ${(s.dataSources||[]).map(ds => `<span class="chip">${ds}</span>`).join('')}
+                  ${(s.dataSources||[]).map(ds => `<span class="chip">${escapeHTML(ds)}</span>`).join('')}
                 </div>
               </div>
               ${(s.mitigations||[]).length ? `
@@ -1273,10 +1275,10 @@ function selectItem(item, parentTech, tacticName) {
                   ${s.mitigations.map(m => `
                     <div class="mitigation-item">
                       <div class="mitigation-header">
-                        <span class="mitigation-id">${m.id}</span>
-                        <span class="mitigation-name">${m.name}</span>
+                        <span class="mitigation-id">${escapeHTML(m.id)}</span>
+                        <span class="mitigation-name">${escapeHTML(m.name)}</span>
                       </div>
-                      <p class="mitigation-desc">${m.description}</p>
+                      <p class="mitigation-desc">${sanitizeHTML(m.description)}</p>
                     </div>`).join('')}
                 </div>` : ''}
             </div>
@@ -1290,14 +1292,14 @@ function selectItem(item, parentTech, tacticName) {
   content.innerHTML = `
     <div class="detail-header">
       <div class="detail-id-group">
-        <span class="detail-id">${item.id}</span>
+        <span class="detail-id">${escapeHTML(item.id)}</span>
         ${crossIds}
       </div>
       <div class="detail-title-wrap">
-        <div class="detail-title">${item.name}</div>
-        <div class="detail-tactic">${parentLabel}${tactic}${item.formerTactic ? ` <span class="former-tactic">(formerly under ${item.formerTactic})</span>` : ''}</div>
+        <div class="detail-title">${escapeHTML(item.name)}</div>
+        <div class="detail-tactic">${parentLabel}${escapeHTML(tactic)}${item.formerTactic ? ` <span class="former-tactic">(formerly under ${escapeHTML(item.formerTactic)})</span>` : ''}</div>
         <div class="detail-platforms">
-          ${(item.platforms||[]).map(p => `<span class="dpf-chip">${pfAbbr(p)}</span>`).join('')}
+          ${(item.platforms||[]).map(p => `<span class="dpf-chip">${escapeHTML(pfAbbr(p))}</span>`).join('')}
         </div>
       </div>
     </div>
@@ -1305,12 +1307,12 @@ function selectItem(item, parentTech, tacticName) {
     ${item.description ? `
     <div class="section">
       <div class="section-title">Description</div>
-      <p class="description">${item.description}</p>
+      <p class="description">${sanitizeHTML(item.description)}</p>
     </div>` : ''}
 
     <div class="section">
       <div class="section-title">Detection Strategies</div>
-      <div class="detection-box">${item.detection || '<em>No detection notes yet.</em>'}</div>
+      <div class="detection-box">${item.detection ? sanitizeHTML(item.detection) : '<em>No detection notes yet.</em>'}</div>
     </div>
 
     ${notes ? `
@@ -1322,7 +1324,7 @@ function selectItem(item, parentTech, tacticName) {
     <div class="section">
       <div class="section-title">Data Sources</div>
       <div class="chips">
-        ${(item.dataSources||[]).map(ds => `<span class="chip">${ds}</span>`).join('')}
+        ${(item.dataSources||[]).map(ds => `<span class="chip">${escapeHTML(ds)}</span>`).join('')}
       </div>
     </div>
 
@@ -1332,10 +1334,10 @@ function selectItem(item, parentTech, tacticName) {
       ${item.mitigations.map(m => `
         <div class="mitigation-item">
           <div class="mitigation-header">
-            <span class="mitigation-id">${m.id}</span>
-            <span class="mitigation-name">${m.name}</span>
+            <span class="mitigation-id">${escapeHTML(m.id)}</span>
+            <span class="mitigation-name">${escapeHTML(m.name)}</span>
           </div>
-          <p class="mitigation-desc">${m.description}</p>
+          <p class="mitigation-desc">${sanitizeHTML(m.description)}</p>
         </div>`).join('')}
     </div>` : ''}
 
@@ -1357,20 +1359,20 @@ function selectItem(item, parentTech, tacticName) {
   });
 }
 
-// Wrap bare http(s) URLs in the note string with anchor tags before sanitizing.
-// Skips URLs already inside an HTML attribute (preceded by href= or src=).
-function autoLink(html) {
-  return html.replace(/(?<!href=['"])https?:\/\/[^\s<"']+/g,
-    url => `<a href="${url}" target="_blank">${url}</a>`);
+// Escape a plain-text string for safe insertion into an HTML context.
+function escapeHTML(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Whitelist sanitizer for notes content.
+// Whitelist sanitizer for HTML content — used for both MITRE data fields and notes.
 // Allows p, strong, em, b, i, code, ul, ol, li, br, and a (http/https href only).
-// Strips all other attributes, event handlers, and bidi control characters.
-function sanitizeNotes(html) {
+// Strips all other tags, attributes, event handlers, and bidi control characters.
+function sanitizeHTML(html) {
+  if (!html) return '';
   const ALLOWED_TAGS = new Set(['p','strong','em','b','i','code','ul','ol','li','br','a']);
   const tmp = document.createElement('div');
-  tmp.innerHTML = autoLink(html);
+  tmp.innerHTML = html;
 
   function clean(node) {
     for (let i = node.childNodes.length - 1; i >= 0; i--) {
@@ -1378,10 +1380,8 @@ function sanitizeNotes(html) {
       if (child.nodeType === Node.ELEMENT_NODE) {
         const tag = child.tagName.toLowerCase();
         if (!ALLOWED_TAGS.has(tag)) {
-          const text = document.createTextNode(child.textContent);
-          node.replaceChild(text, child);
+          node.replaceChild(document.createTextNode(child.textContent), child);
         } else if (tag === 'a') {
-          // Keep href only if it's a safe http(s) URL; force target=_blank
           const href = child.getAttribute('href') || '';
           while (child.attributes.length > 0) child.removeAttribute(child.attributes[0].name);
           if (/^https?:\/\//.test(href)) {
@@ -1391,14 +1391,10 @@ function sanitizeNotes(html) {
           }
           clean(child);
         } else {
-          // Strip all attributes from other allowed elements
-          while (child.attributes.length > 0) {
-            child.removeAttribute(child.attributes[0].name);
-          }
+          while (child.attributes.length > 0) child.removeAttribute(child.attributes[0].name);
           clean(child);
         }
       } else if (child.nodeType === Node.TEXT_NODE) {
-        // Strip Unicode bidi control characters from text nodes
         child.textContent = child.textContent.replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, '');
       }
     }
@@ -1406,6 +1402,18 @@ function sanitizeNotes(html) {
 
   clean(tmp);
   return tmp.innerHTML;
+}
+
+// Wrap bare http(s) URLs in note content with anchor tags before sanitizing.
+// Skips URLs already inside an HTML attribute (preceded by href= or src=).
+function autoLink(html) {
+  return html.replace(/(?<!href=['"])https?:\/\/[^\s<"']+/g,
+    url => `<a href="${url}" target="_blank">${url}</a>`);
+}
+
+// Sanitize user-authored notes: auto-link bare URLs then apply the HTML sanitizer.
+function sanitizeNotes(html) {
+  return sanitizeHTML(autoLink(html));
 }
 
 function toggleSubAcc(header) {
