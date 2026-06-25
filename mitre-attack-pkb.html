@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MITRE ATT&CK PKB</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3248;
+    --accent: #4a90d9;
+    --accent2: #5ba3f5;
+    --text: #e2e8f0;
+    --text-muted: #8892a4;
+    --green: #2d6a4f;
+    --green-bg: #1a3d2b;
+    --blue: #1a3a6b;
+    --blue-bg: #0f2347;
+    --blue-dark: #0d2d5e;
+    --blue-dark-bg: #081a38;
+    --tag-new: #27ae60;
+    --tag-cloud: #2980b9;
+    --selected: #1e3a5f;
+    --hover: #1e2235;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.55rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .header-brand { display: flex; flex-direction: column; gap: 0.1rem; flex-shrink: 0; }
+  header h1 { font-size: 1rem; font-weight: 700; color: var(--accent2); letter-spacing: 0.5px; }
+  header .version { font-size: 0.72rem; color: var(--text-muted); }
+  .header-divider { width: 1px; align-self: stretch; background: var(--border); flex-shrink: 0; margin: 0 0.15rem; }
+
+  .legend {
+    margin-left: auto;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.3rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .dot-new   { background: var(--tag-new); }
+  .dot-cloud { background: var(--tag-cloud); }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Left Sidebar ── */
+  .sidebar {
+    width: 300px;
+    min-width: 240px;
+    max-width: 380px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    resize: horizontal;
+    overflow: hidden;
+  }
+
+  .search-wrap {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem 0.5rem 2rem;
+    color: var(--text);
+    font-size: 0.85rem;
+    outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0.55rem center;
+    transition: border-color 0.15s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--text-muted); }
+
+  .tree {
+    overflow-y: auto;
+    flex: 1;
+    padding: 0.4rem 0;
+  }
+  .tree::-webkit-scrollbar { width: 6px; }
+  .tree::-webkit-scrollbar-track { background: transparent; }
+  .tree::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Tactic row */
+  .tactic-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .tactic-header:hover { background: var(--hover); }
+  .tactic-header .chevron {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .tactic-header.open .chevron { transform: rotate(90deg); }
+  .tactic-name { font-size: 0.8rem; font-weight: 600; color: var(--accent2); flex: 1; }
+  .tactic-count { font-size: 0.7rem; color: var(--text-muted); }
+
+  /* Technique rows */
+  .technique-list { display: none; }
+  .technique-list.open { display: block; }
+
+  .technique-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.38rem 0.75rem 0.38rem 1.5rem;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .technique-row:hover { background: var(--hover); }
+  .technique-row.active {
+    background: var(--selected);
+    border-left-color: var(--accent);
+  }
+
+  /* Sub-technique rows */
+  .sub-toggle {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    padding: 2px;
+  }
+  .sub-toggle.open { transform: rotate(90deg); }
+  .sub-toggle.hidden { visibility: hidden; }
+
+  .technique-info { flex: 1; min-width: 0; }
+  .technique-id { font-size: 0.68rem; color: var(--text-muted); font-family: monospace; }
+  .technique-name { font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .sub-row {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem 0.3rem 2.5rem;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .sub-row:hover { background: var(--hover); }
+  .sub-row.active {
+    background: var(--selected);
+    border-left-color: var(--accent);
+  }
+  .sub-row.open { display: flex; }
+
+  /* Tags */
+  .tag {
+    font-size: 0.6rem;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .tag-new   { background: #1a4a30; color: #4caf78; }
+  .tag-cloud { background: #0f2d50; color: #5ba3f5; }
+
+  /* ── Detail Pane ── */
+  .detail {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 2rem;
+    background: var(--bg);
+  }
+  .detail::-webkit-scrollbar { width: 6px; }
+  .detail::-webkit-scrollbar-track { background: transparent; }
+  .detail::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .placeholder {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    gap: 0.75rem;
+  }
+  .placeholder svg { opacity: 0.25; }
+  .placeholder p { font-size: 0.9rem; }
+
+  .detail-content { display: none; max-width: 760px; }
+  .detail-content.visible { display: block; }
+
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-id {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    background: var(--surface2);
+    padding: 0.3rem 0.6rem;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .detail-title-wrap { flex: 1; }
+  .detail-title { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: 0.3rem; }
+  .detail-tactic { font-size: 0.8rem; color: var(--text-muted); }
+  .former-tactic { font-size: 0.75rem; color: var(--text-muted); opacity: 0.65; font-style: italic; }
+
+  .section { margin-bottom: 1.5rem; }
+  .section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .description { font-size: 0.9rem; line-height: 1.65; color: var(--text); }
+
+  .detection-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 1rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .notes-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid #7b9e6b;
+    border-radius: 6px;
+    padding: 1rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .notes-box p { margin-bottom: 0.65rem; }
+  .notes-box p:last-child { margin-bottom: 0; }
+  .notes-box strong, .notes-box b { color: #b8d4a8; font-weight: 600; }
+  .notes-box code,
+  .description code,
+  .detection-box code,
+  .mitigation-desc code {
+    font-family: 'Consolas', 'Fira Mono', monospace;
+    font-size: 0.82rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: #a8cfa8;
+  }
+  .notes-box a { color: #7bc87b; text-decoration: underline; word-break: break-all; }
+  .notes-box ul { padding-left: 1.25rem; margin-bottom: 0.65rem; }
+  .notes-box li { margin-bottom: 0.25rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  /* ── Citation links ── */
+  a.citation {
+    color: var(--accent2);
+    text-decoration: none;
+    font-size: 0.78rem;
+    opacity: 0.8;
+  }
+  a.citation:hover { text-decoration: underline; opacity: 1; }
+
+  /* ── Mitigations ── */
+  .mitigation-item {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface);
+  }
+  .mitigation-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin-bottom: 0.35rem;
+  }
+  .mitigation-id {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    background: var(--surface2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .mitigation-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .mitigation-desc {
+    font-size: 0.83rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ── Sub-technique accordion (in detail pane) ── */
+  .sub-acc-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+  }
+  .sub-acc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    background: var(--surface);
+    transition: background 0.12s;
+    user-select: none;
+  }
+  .sub-acc-header:hover { background: var(--surface2); }
+  .sub-acc-header.open { background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .sub-acc-chev { font-size: 0.55rem; color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .sub-acc-header.open .sub-acc-chev { transform: rotate(90deg); }
+  .sub-acc-id { font-family: monospace; font-size: 0.72rem; color: var(--accent); min-width: 82px; flex-shrink: 0; }
+  .sub-acc-name { font-size: 0.83rem; color: var(--text); flex: 1; }
+  .sub-acc-body { display: none; padding: 1rem 1rem 0.5rem; background: var(--bg); }
+  .sub-acc-body.open { display: block; }
+  .sub-acc-section { margin-bottom: 1rem; }
+  .sub-acc-section:last-child { margin-bottom: 0; }
+  .sub-acc-label {
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .sub-acc-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .no-results {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  /* ── Filter groups (in header) ── */
+  .filter-groups { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; align-items: center; }
+  .filter-group { display: flex; flex-direction: column; gap: 0.18rem; }
+  .fg-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+  .fg-chips { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+  .pf-chip {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .pf-chip:hover { border-color: var(--accent); color: var(--text); }
+  .pf-chip.active { background: var(--blue-dark); border-color: var(--accent); color: var(--accent2); }
+
+  /* Data Sources dropdown */
+  .ds-wrap { position: relative; flex-shrink: 0; align-self: flex-end; }
+  .ds-btn {
+    font-size: 0.62rem;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+    transition: border-color 0.1s, color 0.1s;
+  }
+  .ds-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ds-btn.active { background: var(--blue-dark); border-color: var(--accent); color: var(--accent2); }
+  .ds-badge {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0 5px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    min-width: 15px;
+    text-align: center;
+  }
+  .ds-panel {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    z-index: 200;
+    width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    flex-direction: column;
+    max-height: 300px;
+  }
+  .ds-panel.open { display: flex; }
+  .ds-search-wrap { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .ds-search {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.28rem 0.5rem;
+    color: var(--text);
+    font-size: 0.78rem;
+    outline: none;
+  }
+  .ds-search:focus { border-color: var(--accent); }
+  .ds-list { overflow-y: auto; flex: 1; padding: 0.2rem 0; }
+  .ds-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.22rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    transition: background 0.1s;
+    user-select: none;
+  }
+  .ds-item:hover { background: var(--hover); color: var(--text); }
+  .ds-item.active { color: var(--accent2); }
+  .ds-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .ds-footer {
+    padding: 0.35rem 0.6rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .ds-clear-btn {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .ds-clear-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* Active filter indicator */
+  .active-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.66rem;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .active-filter-label { color: var(--accent2); }
+  .clear-all-btn {
+    font-size: 0.66rem;
+    padding: 1px 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .clear-all-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* Nav platform chips */
+  .nav-pf-chips { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
+
+  /* ── Domain switcher ── */
+  .domain-switcher { display: flex; gap: 0.25rem; align-items: center; flex-shrink: 0; }
+  .domain-btn {
+    font-size: 0.72rem;
+    padding: 3px 11px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+    white-space: nowrap;
+  }
+  .domain-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* Each button keeps its own domain colour regardless of which is active */
+  .domain-btn[data-domain="enterprise"].active { background: #4a90d9; border-color: #4a90d9; color: #fff; }
+  .domain-btn[data-domain="mobile"].active     { background: #d97820; border-color: #d97820; color: #fff; }
+  .domain-btn[data-domain="ics"].active        { background: #2d8a4a; border-color: #2d8a4a; color: #fff; }
+
+  /* Mobile domain — override accent tokens so every accent-coloured element goes orange */
+  body.domain-mobile {
+    --accent:         #d97820;
+    --accent2:        #f09040;
+    --selected:       #3d2008;
+    --blue:           #3d2008;
+    --blue-bg:        #241204;
+    --blue-dark:      #2d1605;
+    --blue-dark-bg:   #1a0d02;
+  }
+
+  /* ICS domain — override accent tokens so every accent-coloured element goes green */
+  body.domain-ics {
+    --accent:         #2d8a4a;
+    --accent2:        #3daa5c;
+    --selected:       #0a2d18;
+    --blue:           #0a2d18;
+    --blue-bg:        #051a0e;
+    --blue-dark:      #062012;
+    --blue-dark-bg:   #03120a;
+  }
+
+  /* ── Cross-domain ID references (detail pane) ── */
+  .detail-id-group { display: flex; flex-direction: column; gap: 0.3rem; flex-shrink: 0; }
+  .cross-domain-ids { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .cd-badge {
+    font-family: monospace;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .cd-enterprise { background: #1a3a6b; color: #7ab3f5; border: 1px solid #2a4a8b; }
+  .cd-mobile     { background: #1e3d1a; color: #7acf7a; border: 1px solid #2e5d2a; }
+  .cd-ics        { background: #3d2a1a; color: #cf8a5a; border: 1px solid #5d3a1a; }
+  .nav-pf-chip {
+    font-size: 0.56rem;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    opacity: 0.8;
+  }
+
+  /* Detail pane platform chips */
+  .detail-platforms { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.45rem; }
+  .dpf-chip {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  /* Sub-accordion platform chips */
+  .sub-acc-platforms { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; padding-left: 0.5rem; flex-shrink: 0; }
+  .sub-pf-chip {
+    font-size: 0.56rem;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <h1>MITRE ATT&amp;CK PKB</h1>
+    <span class="version" id="domain-version">Enterprise v19</span>
+  </div>
+  <div class="header-divider"></div>
+
+  <!-- Domain switcher -->
+  <div class="domain-switcher">
+    <button class="domain-btn active" data-domain="enterprise">Enterprise</button>
+    <button class="domain-btn" data-domain="mobile">Mobile</button>
+    <button class="domain-btn" data-domain="ics">ICS</button>
+  </div>
+  <div class="header-divider"></div>
+
+  <!-- Enterprise platform chips -->
+  <div class="filter-groups" id="pf-chips-enterprise">
+    <div class="filter-group">
+      <div class="fg-label">Endpoint</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="Windows">Win</span>
+        <span class="pf-chip" data-platform="macOS">macOS</span>
+        <span class="pf-chip" data-platform="Linux">Linux</span>
+        <span class="pf-chip" data-platform="ESXi">ESXi</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="fg-label">Cloud</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="IaaS">IaaS</span>
+        <span class="pf-chip" data-platform="SaaS">SaaS</span>
+        <span class="pf-chip" data-platform="Office Suite">Office Suite</span>
+        <span class="pf-chip" data-platform="Identity Provider">IDP</span>
+        <span class="pf-chip" data-platform="Containers">Cont</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="fg-label">Other</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="Network Devices">Network</span>
+        <span class="pf-chip" data-platform="PRE">PRE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile platform chips (hidden until Mobile domain active) -->
+  <div class="filter-groups" id="pf-chips-mobile" style="display:none">
+    <div class="filter-group">
+      <div class="fg-label">Platform</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="Android">Android</span>
+        <span class="pf-chip" data-platform="iOS">iOS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ICS platform chips (hidden until ICS domain active) -->
+  <!-- data-platform values must exactly match x-mitre-asset names in STIX -->
+  <div class="filter-groups" id="pf-chips-ics" style="display:none">
+    <div class="filter-group">
+      <div class="fg-label">Field Devices</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="Programmable Logic Controller (PLC)">PLC</span>
+        <span class="pf-chip" data-platform="Distributed Control System (DCS) Controller">DCS</span>
+        <span class="pf-chip" data-platform="Programmable Automation Controller (PAC)">PAC</span>
+        <span class="pf-chip" data-platform="Remote Terminal Unit (RTU)">RTU</span>
+        <span class="pf-chip" data-platform="Intelligent Electronic Device (IED)">IED</span>
+        <span class="pf-chip" data-platform="Safety Controller">Safety</span>
+        <span class="pf-chip" data-platform="Field I/O">Field I/O</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="fg-label">Operator</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="Human-Machine Interface (HMI)">HMI</span>
+        <span class="pf-chip" data-platform="Control Server">Control</span>
+        <span class="pf-chip" data-platform="Workstation">WS</span>
+        <span class="pf-chip" data-platform="Data Historian">Historian</span>
+        <span class="pf-chip" data-platform="Data Gateway">Gateway</span>
+        <span class="pf-chip" data-platform="Application Server">App Server</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="fg-label">IT/Network</div>
+      <div class="fg-chips">
+        <span class="pf-chip" data-platform="Jump Host">Jump</span>
+        <span class="pf-chip" data-platform="Firewall">Firewall</span>
+        <span class="pf-chip" data-platform="Switch">Switch</span>
+        <span class="pf-chip" data-platform="Virtual Private Network (VPN) Server">VPN</span>
+        <span class="pf-chip" data-platform="Routers">Routers</span>
+      </div>
+    </div>
+  </div>
+  <div class="ds-wrap">
+    <button class="ds-btn" id="ds-btn">
+      Data Sources <span class="ds-badge" id="ds-badge" style="display:none">0</span><span style="font-size:0.55rem">▾</span>
+    </button>
+    <div class="ds-panel" id="ds-panel">
+      <div class="ds-search-wrap">
+        <input class="ds-search" id="ds-search" placeholder="Search…" autocomplete="off"/>
+      </div>
+      <div class="ds-list" id="ds-list"></div>
+      <div class="ds-footer">
+        <button class="ds-clear-btn" id="ds-clear-btn">Clear</button>
+      </div>
+    </div>
+  </div>
+  <div class="active-filter-row" id="active-filter-row" style="display:none">
+    <span class="active-filter-label"><span id="filter-match-count"></span> results</span>
+    <button class="clear-all-btn" id="clear-all-btn">Clear all ×</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ── Sidebar Tree ── -->
+  <nav class="sidebar">
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="Search techniques…" autocomplete="off"/>
+    </div>
+    <div class="tree" id="tree"></div>
+  </nav>
+
+  <!-- ── Detail Pane ── -->
+  <main class="detail">
+    <div class="placeholder" id="placeholder">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      <p>Select a technique from the tree to view detection details</p>
+    </div>
+    <div class="detail-content" id="detail-content"></div>
+  </main>
+</div>
+
+<script src="notes.js"></script>
+<script src="attack-data.js"></script>
+<script src="mobile-data.js"></script>
+<script src="ics-data.js"></script>
+<script>
+// ── Domain state ─────────────────────────────────────────────────────────────
+// DATA         = Enterprise  (attack-data.js)
+// MOBILE_DATA  = Mobile      (mobile-data.js)
+// ICS_DATA     = ICS         (ics-data.js)
+
+let activeDomain = 'enterprise';
+
+function getActiveData() {
+  return activeDomain === 'enterprise' ? DATA :
+         activeDomain === 'mobile'     ? MOBILE_DATA : ICS_DATA;
+}
+
+// Build cross-domain ID lookup: Enterprise-ID → { mobileId?, icsId? }
+// Used when viewing Enterprise techniques to display Mobile/ICS equivalents.
+const CROSS_DOMAIN = {};
+(function () {
+  MOBILE_DATA.forEach(t => t.techniques.forEach(tech => {
+    if (tech.canonicalId) {
+      CROSS_DOMAIN[tech.canonicalId] = CROSS_DOMAIN[tech.canonicalId] || {};
+      CROSS_DOMAIN[tech.canonicalId].mobileId = tech.id;
+    }
+    (tech.subTechniques || []).forEach(sub => {
+      if (sub.canonicalId) {
+        CROSS_DOMAIN[sub.canonicalId] = CROSS_DOMAIN[sub.canonicalId] || {};
+        CROSS_DOMAIN[sub.canonicalId].mobileId = sub.id;
+      }
+    });
+  }));
+  ICS_DATA.forEach(t => t.techniques.forEach(tech => {
+    if (tech.canonicalId) {
+      CROSS_DOMAIN[tech.canonicalId] = CROSS_DOMAIN[tech.canonicalId] || {};
+      CROSS_DOMAIN[tech.canonicalId].icsId = tech.id;
+    }
+    (tech.subTechniques || []).forEach(sub => {
+      if (sub.canonicalId) {
+        CROSS_DOMAIN[sub.canonicalId] = CROSS_DOMAIN[sub.canonicalId] || {};
+        CROSS_DOMAIN[sub.canonicalId].icsId = sub.id;
+      }
+    });
+  }));
+})();
+
+// Detection notes lookup — uses canonicalId (Enterprise ID) for shared techniques
+// so that notes keyed by Enterprise ID are shown in Mobile/ICS domain views too.
+function getDetectionNotes(tech) {
+  const id = typeof tech === 'string' ? tech : (tech.canonicalId || tech.id);
+  return (typeof DETECTION_NOTES !== 'undefined' && DETECTION_NOTES[id]) || null;
+}
+
+// ── Build sidebar tree ──────────────────────────────────────────
+const tree = document.getElementById('tree');
+
+function makeTree(data) {
+  tree.innerHTML = '';
+  data.forEach((tactic, ti) => {
+    const section = document.createElement('div');
+    section.className = 'tactic-section';
+
+    const header = document.createElement('div');
+    header.className = 'tactic-header';
+    header.innerHTML = `
+      <span class="chevron">▶</span>
+      <span class="tactic-name">${tactic.tactic}</span>
+      <span class="tactic-count">${tactic.techniques.length}</span>
+    `;
+    section.appendChild(header);
+
+    const list = document.createElement('div');
+    list.className = 'technique-list';
+
+    tactic.techniques.forEach((tech, techI) => {
+      const hasSubs = tech.subTechniques && tech.subTechniques.length > 0;
+
+      const row = document.createElement('div');
+      row.className = 'technique-row';
+      row.dataset.id = tech.id;
+      row.innerHTML = `
+        <span class="sub-toggle ${hasSubs ? '' : 'hidden'}">▶</span>
+        <div class="technique-info">
+          <div class="technique-id">${tech.id}</div>
+          <div class="technique-name">${tech.name}</div>
+          ${(tech.platforms||[]).length ? `<div class="nav-pf-chips">${tech.platforms.map(p => `<span class="nav-pf-chip">${pfAbbr(p)}</span>`).join('')}</div>` : ''}
+        </div>
+      `;
+
+      row.addEventListener('click', (e) => {
+        if (e.target.classList.contains('sub-toggle')) return;
+        selectItem(tech);
+        setActive(row);
+        localStorage.setItem('attck-selected', tech.id);
+      });
+
+      if (hasSubs) {
+        const toggle = row.querySelector('.sub-toggle');
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = toggle.classList.toggle('open');
+          subList.querySelectorAll('.sub-row').forEach(r => r.classList.toggle('open', open));
+        });
+      }
+
+      list.appendChild(row);
+
+      const subList = document.createElement('div');
+      if (tech.subTechniques) {
+        tech.subTechniques.forEach(sub => {
+          const subRow = document.createElement('div');
+          subRow.className = 'sub-row';
+          subRow.dataset.id = sub.id;
+          subRow.innerHTML = `
+            <div class="technique-info">
+              <div class="technique-id">${sub.id}</div>
+              <div class="technique-name">${sub.name}</div>
+              ${(sub.platforms||[]).length ? `<div class="nav-pf-chips">${sub.platforms.map(p => `<span class="nav-pf-chip">${pfAbbr(p)}</span>`).join('')}</div>` : ''}
+            </div>
+          `;
+          subRow.addEventListener('click', () => {
+            selectItem(tech);
+            setActive(subRow);
+            expandSubAccordion(sub.id);
+            localStorage.setItem('attck-selected', sub.id);
+          });
+          subList.appendChild(subRow);
+        });
+      }
+      list.appendChild(subList);
+    });
+
+    section.appendChild(list);
+
+    header.addEventListener('click', () => {
+      const open = header.classList.toggle('open');
+      list.classList.toggle('open', open);
+    });
+
+    tree.appendChild(section);
+  });
+}
+
+// ── Platform abbreviations ────────────────────────────────────────
+const PF_ABBR = {
+  // Enterprise
+  'Windows': 'Win', 'Network Devices': 'Network', 'Identity Provider': 'IDP', 'Containers': 'Cont',
+  // ICS assets
+  'Programmable Logic Controller (PLC)':          'PLC',
+  'Distributed Control System (DCS) Controller':  'DCS',
+  'Programmable Automation Controller (PAC)':     'PAC',
+  'Remote Terminal Unit (RTU)':                   'RTU',
+  'Intelligent Electronic Device (IED)':          'IED',
+  'Safety Controller':                            'Safety',
+  'Human-Machine Interface (HMI)':                'HMI',
+  'Control Server':                               'Control',
+  'Data Gateway':                                 'Gateway',
+  'Application Server':                           'App Svr',
+  'Jump Host':                                    'Jump',
+  'Virtual Private Network (VPN) Server':         'VPN',
+};
+function pfAbbr(p) { return PF_ABBR[p] || p; }
+
+// Data source categories — recomputed whenever the active domain changes
+function getDSCategories() {
+  return [...new Set(
+    getActiveData().flatMap(t => t.techniques.flatMap(te =>
+      [...(te.dataSources||[]), ...(te.subTechniques||[]).flatMap(s => s.dataSources||[])]
+    )).map(ds => ds.split(':')[0].trim())
+  )].sort();
+}
+
+// ── Filter state ──────────────────────────────────────────────────
+const activeFilters = { platforms: new Set(), sources: new Set() };
+
+function techMatchesFilters(tech) {
+  const pf = activeFilters.platforms;
+  const sf = activeFilters.sources;
+  if (pf.size === 0 && sf.size === 0) return true;
+  const pfHit = pf.size > 0 && (tech.platforms||[]).some(p => pf.has(p));
+  const sfHit = sf.size > 0 && (tech.dataSources||[]).some(ds => sf.has(ds.split(':')[0].trim()));
+  return pfHit || sfHit;
+}
+
+function rebuildTree() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const pf = activeFilters.platforms;
+  const sf = activeFilters.sources;
+  const noFilter = !q && pf.size === 0 && sf.size === 0;
+
+  function techVisible(tech) {
+    const qOk = !q || tech.id.toLowerCase().includes(q) || tech.name.toLowerCase().includes(q);
+    return qOk && (noFilter || techMatchesFilters(tech));
+  }
+
+  const activeData = getActiveData();
+  const filtered = noFilter ? activeData : activeData.map(tactic => ({
+    ...tactic,
+    techniques: tactic.techniques.filter(tech =>
+      techVisible(tech) || (tech.subTechniques||[]).some(s => techVisible(s))
+    )
+  })).filter(t => t.techniques.length > 0);
+
+  makeTree(filtered);
+
+  if (!noFilter) {
+    document.querySelectorAll('.tactic-header').forEach(h => {
+      h.classList.add('open'); h.nextElementSibling.classList.add('open');
+    });
+    const total = filtered.reduce((n, t) => n + t.techniques.length, 0);
+    const el = document.getElementById('filter-match-count');
+    if (el) el.textContent = total + ' technique' + (total !== 1 ? 's' : '');
+  }
+
+  const anyFilter = pf.size > 0 || sf.size > 0;
+  const row = document.getElementById('active-filter-row');
+  if (row) row.style.display = anyFilter ? '' : 'none';
+
+  // Try to restore saved selection in the rebuilt tree
+  const savedId = localStorage.getItem('attck-selected');
+  if (savedId) {
+    for (const tactic of filtered) {
+      for (const tech of tactic.techniques) {
+        if (tech.id === savedId) {
+          const r = document.querySelector(`.technique-row[data-id="${savedId}"]`);
+          if (r) { selectItem(tech); setActive(r); } return;
+        }
+        const sub = (tech.subTechniques||[]).find(s => s.id === savedId);
+        if (sub) {
+          const sr = document.querySelector(`.sub-row[data-id="${savedId}"]`);
+          if (sr) { selectItem(tech); setActive(sr); expandSubAccordion(savedId); } return;
+        }
+      }
+    }
+  }
+}
+
+// ── Platform chip handlers ────────────────────────────────────────
+document.querySelectorAll('.pf-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const p = chip.dataset.platform;
+    if (activeFilters.platforms.has(p)) { activeFilters.platforms.delete(p); chip.classList.remove('active'); }
+    else { activeFilters.platforms.add(p); chip.classList.add('active'); }
+    rebuildTree();
+  });
+});
+
+// ── Data source dropdown ──────────────────────────────────────────
+function buildDsList() {
+  const list = document.getElementById('ds-list');
+  if (!list) return;
+  list.innerHTML = '';
+  getDSCategories().forEach(cat => {
+    const item = document.createElement('div');
+    item.className = 'ds-item';
+    item.dataset.source = cat;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    const lbl = document.createElement('span');
+    lbl.textContent = cat;
+    lbl.style.cssText = 'cursor:pointer;flex:1';
+    item.appendChild(cb); item.appendChild(lbl);
+    item.addEventListener('click', () => {
+      if (activeFilters.sources.has(cat)) {
+        activeFilters.sources.delete(cat); item.classList.remove('active'); cb.checked = false;
+      } else {
+        activeFilters.sources.add(cat); item.classList.add('active'); cb.checked = true;
+      }
+      updateDsBadge(); rebuildTree();
+    });
+    list.appendChild(item);
+  });
+}
+
+function updateDsBadge() {
+  const count = activeFilters.sources.size;
+  const badge = document.getElementById('ds-badge');
+  const btn   = document.getElementById('ds-btn');
+  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? '' : 'none'; }
+  if (btn)   btn.classList.toggle('active', count > 0);
+}
+
+function toggleDsDropdown(e) {
+  e && e.stopPropagation();
+  const panel = document.getElementById('ds-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    const s = document.getElementById('ds-search');
+    s.value = '';
+    document.querySelectorAll('#ds-list .ds-item').forEach(i => i.style.display = '');
+    s.focus();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {}, false); // ensure DOM ready
+
+document.getElementById('ds-btn').addEventListener('click', toggleDsDropdown);
+
+document.getElementById('ds-search').addEventListener('input', function () {
+  const lo = this.value.toLowerCase();
+  document.querySelectorAll('#ds-list .ds-item').forEach(item => {
+    item.style.display = item.dataset.source.toLowerCase().includes(lo) ? '' : 'none';
+  });
+});
+
+document.getElementById('ds-clear-btn').addEventListener('click', () => {
+  activeFilters.sources.clear();
+  document.querySelectorAll('#ds-list .ds-item').forEach(item => {
+    item.classList.remove('active');
+    const cb = item.querySelector('input'); if (cb) cb.checked = false;
+  });
+  updateDsBadge(); rebuildTree();
+});
+
+document.getElementById('clear-all-btn').addEventListener('click', () => {
+  activeFilters.platforms.clear(); activeFilters.sources.clear();
+  document.querySelectorAll('.pf-chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#ds-list .ds-item').forEach(item => {
+    item.classList.remove('active');
+    const cb = item.querySelector('input'); if (cb) cb.checked = false;
+  });
+  updateDsBadge(); rebuildTree();
+});
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('ds-panel');
+  const btn   = document.getElementById('ds-btn');
+  if (panel && panel.classList.contains('open') && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+// ── Domain switcher ───────────────────────────────────────────────────────────
+const DOMAIN_VERSION = { enterprise: 'Enterprise v19', mobile: 'Mobile v19', ics: 'ICS v19' };
+
+function applyDomainUI(domain) {
+  activeDomain = domain;
+  document.querySelectorAll('.domain-btn').forEach(b => b.classList.toggle('active', b.dataset.domain === domain));
+  document.body.classList.remove('domain-enterprise', 'domain-mobile', 'domain-ics');
+  document.body.classList.add('domain-' + domain);
+  const vEl = document.getElementById('domain-version');
+  if (vEl) vEl.textContent = DOMAIN_VERSION[domain] || domain;
+  ['enterprise', 'mobile', 'ics'].forEach(d => {
+    const el = document.getElementById('pf-chips-' + d);
+    if (el) el.style.display = d === domain ? '' : 'none';
+  });
+}
+
+// Restore saved domain before building the tree so getActiveData() returns the right set
+const savedDomain = localStorage.getItem('attck-domain');
+if (savedDomain && savedDomain !== 'enterprise') applyDomainUI(savedDomain);
+
+makeTree(getActiveData());
+buildDsList();
+
+document.querySelectorAll('.domain-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const domain = btn.dataset.domain;
+    if (domain === activeDomain) return;
+
+    localStorage.setItem('attck-domain', domain);
+    applyDomainUI(domain);
+
+    // Clear all active platform filters and chip highlights
+    activeFilters.platforms.clear();
+    activeFilters.sources.clear();
+    document.querySelectorAll('.pf-chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#ds-list .ds-item').forEach(item => {
+      item.classList.remove('active');
+      const cb = item.querySelector('input'); if (cb) cb.checked = false;
+    });
+    updateDsBadge();
+
+    // Clear detail pane and rebuild tree for new domain
+    document.getElementById('placeholder').style.display = '';
+    document.getElementById('detail-content').classList.remove('visible');
+    localStorage.removeItem('attck-selected');
+
+    buildDsList();
+    rebuildTree();
+  });
+});
+
+// Restore the last-viewed technique after a reload, otherwise open the first tactic
+(function restoreSelection() {
+  const savedId = localStorage.getItem('attck-selected');
+  if (!savedId) { return; }
+
+  for (const tactic of getActiveData()) {
+    for (const tech of tactic.techniques) {
+      // Parent technique
+      if (tech.id === savedId) {
+        const row = document.querySelector(`.technique-row[data-id="${savedId}"]`);
+        if (row) {
+          const section = row.closest('.tactic-section');
+          section.querySelector('.tactic-header').classList.add('open');
+          section.querySelector('.technique-list').classList.add('open');
+          selectItem(tech);
+          setActive(row);
+        }
+        return;
+      }
+      // Sub-technique
+      const sub = (tech.subTechniques || []).find(s => s.id === savedId);
+      if (sub) {
+        const subRow = document.querySelector(`.sub-row[data-id="${savedId}"]`);
+        if (subRow) {
+          const section = subRow.closest('.tactic-section');
+          section.querySelector('.tactic-header').classList.add('open');
+          section.querySelector('.technique-list').classList.add('open');
+          subRow.classList.add('open');
+          const toggle = section.querySelector(`.technique-row[data-id="${tech.id}"] .sub-toggle`);
+          if (toggle) toggle.classList.add('open');
+          selectItem(tech);
+          setActive(subRow);
+          expandSubAccordion(savedId);
+        }
+        return;
+      }
+    }
+  }
+  // savedId no longer exists in DATA — leave tree collapsed
+}());
+
+// ── Active state ──────────────────────────────────────────────
+function setActive(el) {
+  document.querySelectorAll('.technique-row.active, .sub-row.active').forEach(r => r.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Detail pane ───────────────────────────────────────────────
+function selectItem(item, parentTech, tacticName) {
+  const placeholder = document.getElementById('placeholder');
+  const content = document.getElementById('detail-content');
+  placeholder.style.display = 'none';
+  content.classList.add('visible');
+
+  const tactic = tacticName || getActiveData().find(t => t.techniques.find(te => te.id === item.id))?.tactic || '';
+  const parentLabel = parentTech ? `${parentTech.id} · ${parentTech.name} → ` : '';
+
+  // Build cross-domain ID badges for the detail header
+  function buildCrossIds(tech) {
+    const parts = [];
+    if (activeDomain === 'enterprise') {
+      const cd = CROSS_DOMAIN[tech.id];
+      if (cd?.mobileId) parts.push(`<span class="cd-badge cd-mobile">Mobile: ${cd.mobileId}</span>`);
+      if (cd?.icsId)    parts.push(`<span class="cd-badge cd-ics">ICS: ${cd.icsId}</span>`);
+    } else if (tech.canonicalId) {
+      parts.push(`<span class="cd-badge cd-enterprise">Enterprise: ${tech.canonicalId}</span>`);
+    }
+    return parts.length ? `<div class="cross-domain-ids">${parts.join('')}</div>` : '';
+  }
+
+  const subAccHTML = item.subTechniques && item.subTechniques.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Sub-Techniques (${item.subTechniques.length})</div>
+      ${item.subTechniques.map(s => {
+        const sNotes = getDetectionNotes(s);
+        const sCrossIds = buildCrossIds(s);
+        return `
+          <div class="sub-acc-card" id="sub-acc-${s.id}">
+            <div class="sub-acc-header" onclick="toggleSubAcc(this)">
+              <span class="sub-acc-chev">▶</span>
+              <span class="sub-acc-id">${s.id}</span>
+              <span class="sub-acc-name">${s.name}</span>
+              ${(s.platforms||[]).length ? `<span class="sub-acc-platforms">${s.platforms.map(p => `<span class="sub-pf-chip">${pfAbbr(p)}</span>`).join('')}</span>` : ''}
+            </div>
+            <div class="sub-acc-body">
+              ${sCrossIds ? `<div class="sub-acc-section"><div class="cross-domain-ids" style="margin-bottom:0.5rem">${sCrossIds}</div></div>` : ''}
+              ${s.description ? `
+                <div class="sub-acc-section">
+                  <div class="sub-acc-label">Description</div>
+                  <p class="description">${s.description}</p>
+                </div>` : ''}
+              <div class="sub-acc-section">
+                <div class="sub-acc-label">Detection Strategies</div>
+                <div class="detection-box">${s.detection || '<em>No detection notes yet.</em>'}</div>
+              </div>
+              ${sNotes ? `
+                <div class="sub-acc-section">
+                  <div class="sub-acc-label">Notes</div>
+                  <div class="notes-box" id="sub-notes-${s.id}"></div>
+                </div>` : ''}
+              <div class="sub-acc-section">
+                <div class="sub-acc-label">Data Sources</div>
+                <div class="chips">
+                  ${(s.dataSources||[]).map(ds => `<span class="chip">${ds}</span>`).join('')}
+                </div>
+              </div>
+              ${(s.mitigations||[]).length ? `
+                <div class="sub-acc-section">
+                  <div class="sub-acc-label">Mitigations</div>
+                  ${s.mitigations.map(m => `
+                    <div class="mitigation-item">
+                      <div class="mitigation-header">
+                        <span class="mitigation-id">${m.id}</span>
+                        <span class="mitigation-name">${m.name}</span>
+                      </div>
+                      <p class="mitigation-desc">${m.description}</p>
+                    </div>`).join('')}
+                </div>` : ''}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+  ` : '';
+
+  const notes = getDetectionNotes(item);
+  const crossIds = buildCrossIds(item);
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-id-group">
+        <span class="detail-id">${item.id}</span>
+        ${crossIds}
+      </div>
+      <div class="detail-title-wrap">
+        <div class="detail-title">${item.name}</div>
+        <div class="detail-tactic">${parentLabel}${tactic}${item.formerTactic ? ` <span class="former-tactic">(formerly under ${item.formerTactic})</span>` : ''}</div>
+        <div class="detail-platforms">
+          ${(item.platforms||[]).map(p => `<span class="dpf-chip">${pfAbbr(p)}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    ${item.description ? `
+    <div class="section">
+      <div class="section-title">Description</div>
+      <p class="description">${item.description}</p>
+    </div>` : ''}
+
+    <div class="section">
+      <div class="section-title">Detection Strategies</div>
+      <div class="detection-box">${item.detection || '<em>No detection notes yet.</em>'}</div>
+    </div>
+
+    ${notes ? `
+    <div class="section">
+      <div class="section-title">Notes</div>
+      <div class="notes-box" id="notes-box-target"></div>
+    </div>` : ''}
+
+    <div class="section">
+      <div class="section-title">Data Sources</div>
+      <div class="chips">
+        ${(item.dataSources||[]).map(ds => `<span class="chip">${ds}</span>`).join('')}
+      </div>
+    </div>
+
+    ${(item.mitigations||[]).length ? `
+    <div class="section">
+      <div class="section-title">Mitigations</div>
+      ${item.mitigations.map(m => `
+        <div class="mitigation-item">
+          <div class="mitigation-header">
+            <span class="mitigation-id">${m.id}</span>
+            <span class="mitigation-name">${m.name}</span>
+          </div>
+          <p class="mitigation-desc">${m.description}</p>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${subAccHTML}
+  `;
+
+  if (notes) {
+    const box = document.getElementById('notes-box-target');
+    if (box) box.innerHTML = sanitizeNotes(notes);
+  }
+
+  // Inject detection notes into any sub-technique accordion note boxes
+  (item.subTechniques || []).forEach(s => {
+    const sNotes = getDetectionNotes(s);
+    if (sNotes) {
+      const box = document.getElementById('sub-notes-' + s.id);
+      if (box) box.innerHTML = sanitizeNotes(sNotes);
+    }
+  });
+}
+
+// Wrap bare http(s) URLs in the note string with anchor tags before sanitizing.
+// Skips URLs already inside an HTML attribute (preceded by href= or src=).
+function autoLink(html) {
+  return html.replace(/(?<!href=['"])https?:\/\/[^\s<"']+/g,
+    url => `<a href="${url}" target="_blank">${url}</a>`);
+}
+
+// Whitelist sanitizer for notes content.
+// Allows p, strong, em, b, i, code, ul, ol, li, br, and a (http/https href only).
+// Strips all other attributes, event handlers, and bidi control characters.
+function sanitizeNotes(html) {
+  const ALLOWED_TAGS = new Set(['p','strong','em','b','i','code','ul','ol','li','br','a']);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = autoLink(html);
+
+  function clean(node) {
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+      const child = node.childNodes[i];
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED_TAGS.has(tag)) {
+          const text = document.createTextNode(child.textContent);
+          node.replaceChild(text, child);
+        } else if (tag === 'a') {
+          // Keep href only if it's a safe http(s) URL; force target=_blank
+          const href = child.getAttribute('href') || '';
+          while (child.attributes.length > 0) child.removeAttribute(child.attributes[0].name);
+          if (/^https?:\/\//.test(href)) {
+            child.setAttribute('href', href);
+            child.setAttribute('target', '_blank');
+            child.setAttribute('rel', 'noopener noreferrer');
+          }
+          clean(child);
+        } else {
+          // Strip all attributes from other allowed elements
+          while (child.attributes.length > 0) {
+            child.removeAttribute(child.attributes[0].name);
+          }
+          clean(child);
+        }
+      } else if (child.nodeType === Node.TEXT_NODE) {
+        // Strip Unicode bidi control characters from text nodes
+        child.textContent = child.textContent.replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, '');
+      }
+    }
+  }
+
+  clean(tmp);
+  return tmp.innerHTML;
+}
+
+function toggleSubAcc(header) {
+  const open = header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open', open);
+  if (open) {
+    const subId = header.parentElement.id.replace('sub-acc-', '');
+    localStorage.setItem('attck-selected', subId);
+  }
+}
+
+function expandSubAccordion(subId) {
+  const card = document.getElementById('sub-acc-' + subId);
+  if (!card) return;
+  const header = card.querySelector('.sub-acc-header');
+  const body = card.querySelector('.sub-acc-body');
+  if (header && body && !header.classList.contains('open')) {
+    header.classList.add('open');
+    body.classList.add('open');
+  }
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 30);
+}
+
+function selectSubFromTable(subId) {
+  for (const tactic of getActiveData()) {
+    for (const tech of tactic.techniques) {
+      const sub = (tech.subTechniques||[]).find(s => s.id === subId);
+      if (sub) {
+        // Show parent technique (renders all sub-technique accordions)
+        selectItem(tech);
+        // Expand the sidebar sub-row and open parent tactic section
+        const subRow = document.querySelector(`.sub-row[data-id="${subId}"]`);
+        if (subRow) {
+          subRow.classList.add('open');
+          const section = subRow.closest('.tactic-section');
+          if (section) {
+            section.querySelector('.tactic-header').classList.add('open');
+            section.querySelector('.technique-list').classList.add('open');
+          }
+          setActive(subRow);
+        }
+        expandSubAccordion(subId);
+        return;
+      }
+    }
+  }
+}
+
+// ── Search ────────────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', rebuildTree);
+</script>
+
+</body>
+</html>
