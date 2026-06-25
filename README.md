@@ -1,6 +1,6 @@
 # MITRE ATT&CK Personal Knowledge Base
 
-A simple, local, browser-based tool for adding your own detection notes across the MITRE ATT&CK Enterprise, Mobile, and ICS matrices. No server required — open the HTML file locally and start writing. The notes will be preserved on your local device.
+A simple, local, browser-based tool for adding your own detection notes across the MITRE ATT&CK Enterprise, Mobile, and ICS matrices. No server required — open the HTML file locally and start writing. The notes are preserved on your local device.
 
 ---
 
@@ -8,13 +8,13 @@ A simple, local, browser-based tool for adding your own detection notes across t
 
 - Browse all three ATT&CK matrices (Enterprise, Mobile, ICS) with a domain switcher
 - Filter techniques by platform (Windows, Linux, macOS, Android, iOS, OT assets) and data source
-- Read MITRE's official technique descriptions and detection strategies alongside your own notes
+- Read MITRE's official technique descriptions, detection strategies, and mitigations alongside your own notes
 - View cross-domain ID badges when a technique appears in multiple matrices
 - Resume exactly where you left off — the active domain and last-selected technique are remembered across reloads
 
 ## Adding notes
 
-Notes live in `notes.js`. Each entry is an HTML string keyed by technique ID:
+Notes live in `notes.js`. Each entry is an HTML string keyed by technique ID. Example of note with the T1059.001 subtechnique:
 
 ```javascript
 "T1059.001": "<p>PowerShell: watch for encoded commands (-enc) and suspicious parent processes.</p>",
