@@ -18,14 +18,14 @@ A look at the interface
 
 ## Adding notes
 
-Notes live in `notes.js`. Each entry is an HTML string keyed by technique ID. Example of note with the T1059.001 subtechnique:
+Notes live in `notes.js`. Each entry is an HTML string keyed by technique ID. Example of note inserted into the T1059.001 subtechnique:
 
 ```javascript
 "T1059.001": "<p>PowerShell: watch for encoded commands (-enc) and suspicious parent processes.</p>",
 ```
 
 Leave the value as `""` to mark a technique as a placeholder with no notes yet.
-Two example notes are included at the top of the file — `T1589` and `T1589.001` — to demonstrate plain text and paragraph-tag formatting. The ICS entry `T0813` shows how to include a reference link.
+Two example notes are included at the top of the file — `T1589` and `T1589.001` — to demonstrate plain text and paragraph-tag formatting. The ICS entry `T0813` shows a reference link. 
 
 The file is organised into four sections:
 
@@ -44,8 +44,8 @@ Enterprise notes take precedence across all three domains. If a Mobile or ICS te
 
 | File | Purpose |
 |---|---|
-| `mitre-attack-pkb.html` | The PKB tool — open this in a browser |
-| `notes.js` | Your personal detection notes, organised by tactic |
+| `mitre-attack-pkb.html` | The PKB tool — open this file in a browser |
+| `notes.js` | Your personal detection notes, organised by tactic. Edit this. |
 | `attack-data.js` | Enterprise technique data (generated, do not edit manually) |
 | `mobile-data.js` | Mobile technique data (generated, do not edit manually) |
 | `ics-data.js` | ICS technique data (generated, do not edit manually) |
@@ -72,7 +72,7 @@ Needed only if regenerating data files from a new STIX release
 
 
 
-## Regenerating data files
+## Regenerating the data files
 
 The technique data files are generated from the [MITRE ATT&CK STIX bundles](https://github.com/mitre-attack/attack-stix-data). The STIX data is expected locally in a directory above. Modify to your local setup:
 
